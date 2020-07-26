@@ -210,9 +210,56 @@ class Config(object):
     # Gradient norm clipping
     GRADIENT_CLIP_NORM = 5.0
 
-    def __init__(self):
+    def __init__(self,data=None):
         """Set values of computed attributes."""
+        if type(data)==dict:
+            self.NAME = data["NAME"]
+            self.GPU_COUNT = data["GPU_COUNT"]
+            self.IMAGES_PER_GPU = data["IMAGES_PER_GPU"]
+            self.STEPS_PER_EPOCH = data["STEPS_PER_EPOCH"]
+            self.VALIDATION_STEPS = data["VALIDATION_STEPS"]
+            self.BACKBONE = data["BACKBONE"]
+            self.COMPUTE_BACKBONE_SHAPE = data["COMPUTE_BACKBONE_SHAPE"]
+            self.BACKBONE_STRIDES = data["BACKBONE_STRIDES"]
+            self.FPN_CLASSIF_FC_LAYERS_SIZE = data["FPN_CLASSIF_FC_LAYERS_SIZE"]
+            self.TOP_DOWN_PYRAMID_SIZE = data["TOP_DOWN_PYRAMID_SIZE"]
+            self.NUM_CLASSES = data["NUM_CLASSES"]
+            self.RPN_ANCHOR_SCALES = tuple(data["RPN_ANCHOR_SCALES"])
+            self.RPN_ANCHOR_RATIOS = data["RPN_ANCHOR_RATIOS"]
+            self.RPN_ANCHOR_STRIDE = data["RPN_ANCHOR_STRIDE"]
+            self.RPN_NMS_THRESHOLD = data["RPN_NMS_THRESHOLD"]
+            self.RPN_TRAIN_ANCHORS_PER_IMAGE = data["RPN_TRAIN_ANCHORS_PER_IMAGE"]
+            self.PRE_NMS_LIMIT = data["PRE_NMS_LIMIT"]
+            self.POST_NMS_ROIS_TRAINING = data["POST_NMS_ROIS_TRAINING"]
+            self.POST_NMS_ROIS_INFERENCE = data["POST_NMS_ROIS_INFERENCE"]
+            self.USE_MINI_MASK = data["USE_MINI_MASK"]
+            self.MINI_MASK_SHAPE = tuple(data["MINI_MASK_SHAPE"])
+            self.IMAGE_RESIZE_MODE = data["IMAGE_RESIZE_MODE"]
+            self.IMAGE_MIN_DIM = data["IMAGE_MIN_DIM"]
+            self.IMAGE_MAX_DIM = data["IMAGE_MAX_DIM"]
+            self.IMAGE_MIN_SCALE = data["IMAGE_MIN_SCALE"]
+            self.IMAGE_CHANNEL_COUNT = data["IMAGE_CHANNEL_COUNT"]
+            self.MEAN_PIXEL = np.array(data["MEAN_PIXEL"])
+            self.TRAIN_ROIS_PER_IMAGE = data["TRAIN_ROIS_PER_IMAGE"]
+            self.ROI_POSITIVE_RATIO = data["ROI_POSITIVE_RATIO"]
+            self.POOL_SIZE = data["POOL_SIZE"]
+            self.MASK_POOL_SIZE = data["MASK_POOL_SIZE"]
+            self.MASK_SHAPE = data["MASK_SHAPE"]
+            self.MAX_GT_INSTANCES = data["MAX_GT_INSTANCES"]
+            self.RPN_BBOX_STD_DEV = np.array(data["RPN_BBOX_STD_DEV"])
+            self.BBOX_STD_DEV = np.array(data["BBOX_STD_DEV"])
+            self.DETECTION_MAX_INSTANCES = data["DETECTION_MAX_INSTANCES"]
+            self.DETECTION_MIN_CONFIDENCE = data["DETECTION_MIN_CONFIDENCE"]
+            self.DETECTION_NMS_THRESHOLD = data["DETECTION_NMS_THRESHOLD"]
+            self.LEARNING_RATE = data["LEARNING_RATE"]
+            self.LEARNING_MOMENTUM = data["LEARNING_MOMENTUM"]
+            self.WEIGHT_DECAY = data["WEIGHT_DECAY"]
+            self.LOSS_WEIGHTS = data["LOSS_WEIGHTS"]
+            self.USE_RPN_ROIS = data["USE_RPN_ROIS"]
+            self.TRAIN_BN = data["TRAIN_BN"]
+            self.GRADIENT_CLIP_NORM = data["GRADIENT_CLIP_NORM"]
         # Effective batch size
+        self.IMAGES_PER_GPU = 1
         self.BATCH_SIZE = self.IMAGES_PER_GPU * self.GPU_COUNT
 
         # Input image size
@@ -234,3 +281,13 @@ class Config(object):
             if not a.startswith("__") and not callable(getattr(self, a)):
                 print("{:30} {}".format(a, getattr(self, a)))
         print("\n")
+
+    def toObj(self):
+        x={}
+        for a in dir(self):
+            if not a.startswith("__") and not callable(getattr(self, a)):
+                x[a]=getattr(self, a)
+        x["RPN_BBOX_STD_DEV"]=self.RPN_BBOX_STD_DEV.tolist()
+        x["BBOX_STD_DEV"]=self.BBOX_STD_DEV.tolist()
+        x["MEAN_PIXEL"]=self.MEAN_PIXEL.tolist()       
+        return x

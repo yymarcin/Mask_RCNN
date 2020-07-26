@@ -22,6 +22,8 @@ import keras.backend as K
 import keras.layers as KL
 import keras.engine as KE
 import keras.models as KM
+from keras.models import load_model
+from mrcnn.config import Config
 
 from mrcnn import utils
 
@@ -29,6 +31,7 @@ from mrcnn import utils
 from distutils.version import LooseVersion
 assert LooseVersion(tf.__version__) >= LooseVersion("1.3")
 assert LooseVersion(keras.__version__) >= LooseVersion('2.0.8')
+
 
 
 ############################################################
@@ -269,9 +272,20 @@ class ProposalLayer(KE.Layer):
 
     def __init__(self, proposal_count, nms_threshold, config=None, **kwargs):
         super(ProposalLayer, self).__init__(**kwargs)
-        self.config = config
+        if type(config)==Config:
+            self.config=config
+        else:
+            self.config = Config(config)
+        self.config.display()
         self.proposal_count = proposal_count
         self.nms_threshold = nms_threshold
+
+    def get_config(self):
+        return {
+		"proposal_count":self.proposal_count,
+		"nms_threshold":self.nms_threshold,
+		"config":self.config.toObj()
+	}
 
     def call(self, inputs):
         # Box Scores. Use the foreground class confidence. [Batch, num_rois, 1]
@@ -364,6 +378,9 @@ class PyramidROIAlign(KE.Layer):
     def __init__(self, pool_shape, **kwargs):
         super(PyramidROIAlign, self).__init__(**kwargs)
         self.pool_shape = tuple(pool_shape)
+
+    def get_config(self):
+        return {"pool_shape":self.pool_shape}
 
     def call(self, inputs):
         # Crop boxes [batch, num_boxes, (y1, x1, y2, x2)] in normalized coords
@@ -790,7 +807,13 @@ class DetectionLayer(KE.Layer):
 
     def __init__(self, config=None, **kwargs):
         super(DetectionLayer, self).__init__(**kwargs)
-        self.config = config
+        if type(config)==Config:
+            self.config=config
+        else:
+            self.config = Config(config)
+
+    def get_config(self):
+        return {"config":self.config.toObj()}
 
     def call(self, inputs):
         rois = inputs[0]
@@ -1823,7 +1846,7 @@ class MaskRCNN():
     The actual Keras model is in the keras_model property.
     """
 
-    def __init__(self, mode, config, model_dir):
+    def __init__(self, mode, config, model_dir, model_path=None):
         """
         mode: Either "training" or "inference"
         config: A Sub-class of the Config class
@@ -1834,7 +1857,16 @@ class MaskRCNN():
         self.config = config
         self.model_dir = model_dir
         self.set_log_dir()
-        self.keras_model = self.build(mode=mode, config=config)
+        if model_path==None:
+            self.keras_model = self.build(mode=mode, config=config)
+        else:
+            self.keras_model = load_model(model_path,custom_objects={
+	        "BatchNorm":BatchNorm,
+	        "tf":tf,
+	        "ProposalLayer":ProposalLayer,
+	        "PyramidROIAlign":PyramidROIAlign,
+	        "DetectionLayer":DetectionLayer
+            })
 
     def build(self, mode, config):
         """Build Mask R-CNN architecture.
